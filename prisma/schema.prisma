@@ -1,0 +1,40 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Book {
+  id    String @id @map("_id") @default(auto()) @db.ObjectId
+  title String
+  img   String
+  link  String
+}
+
+model BlogPost {
+  id       String   @id @map("_id") @default(auto()) @db.ObjectId
+  title    String
+  content  String
+  comments Comment[]
+}
+
+model Comment {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  text      String
+  author    String   @default("Anonymous") // ✅ add this
+  postId    String   @db.ObjectId
+  post      BlogPost @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Service {
+  id          String @id @map("_id") @default(auto()) @db.ObjectId
+  title       String
+  description String
+  price       Float
+}

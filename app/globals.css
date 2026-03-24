@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* optional custom styles */
+body {
+  @apply bg-base-100 text-base-content;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* optional custom styles */
+body {
+  @apply bg-base-100 text-base-content;
+  background-color: var(--background);
+  color: var(--foreground);
+}
