@@ -1,57 +1,50 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { dummyBooks } from "../route"; // now works because we exported it
-import type { Book } from "../route"; // import Book type for TS
+import { dummyBooks, type Book } from "@/lib/dummyBooks";
 
-// ------------------ GET single book by ID ------------------
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Try fetching from MongoDB
-    let book = await prisma.book.findUnique({
-      where: { id: params.id },
-    });
+    const { id } = await params;
 
-    // Fallback: check dummyBooks
+    let book = await prisma.book.findUnique({ where: { id } });
+
     if (!book) {
-      book = dummyBooks.find((b: Book) => b.id === params.id) || null;
+      book = dummyBooks.find((b: Book) => b.id === id) || null;
     }
 
     if (!book) {
       return NextResponse.json({ message: "Book not found" }, { status: 404 });
     }
 
-    const result = {
+    return NextResponse.json({
       id: book.id.toString(),
       title: book.title,
       link: book.link,
       img: book.img,
-    };
-
-    return NextResponse.json(result);
+    });
   } catch (err) {
     console.error("GET /api/books/[id] failed:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-// ------------------ DELETE book by ID ------------------
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Delete from MongoDB if exists
+    const { id } = await params;
+
     try {
-      await prisma.book.delete({ where: { id: params.id } });
-    } catch (err: any) {
-      if (err?.code !== "P2025") throw err;
+      await prisma.book.delete({ where: { id } });
+    } catch (err: unknown) {
+      if ((err as { code?: string })?.code !== "P2025") throw err;
     }
 
-    // Remove from dummyBooks
-    const index = dummyBooks.findIndex((b: Book) => b.id === params.id);
+    const index = dummyBooks.findIndex((b: Book) => b.id === id);
     if (index !== -1) dummyBooks.splice(index, 1);
 
     return NextResponse.json({ message: "Book deleted successfully" });
