@@ -13,7 +13,6 @@ type Book = {
   link: string
 }
 
-// Dummy books
 const dummyBooks: Book[] = [
   {
     id: "1",
@@ -46,23 +45,17 @@ export default function Books() {
       const res = await fetch(`/api/books?query=${search}`)
       const data = await res.json()
       const combined: Book[] = Array.isArray(data) ? [...data, ...dummyBooks] : [...dummyBooks]
-
-      // Filter by query if provided
       const filtered = search
-        ? combined.filter((b) => b.title.toLowerCase().includes(search.toLowerCase()))
+        ? combined.filter(b => b.title.toLowerCase().includes(search.toLowerCase()))
         : combined
-
       setBooks(filtered)
-    } catch (err) {
-      console.error("Fetch books error:", err)
+    } catch {
       setBooks([...dummyBooks])
     }
     setLoading(false)
   }
 
-  useEffect(() => {
-    fetchBooks()
-  }, [])
+  useEffect(() => { fetchBooks() }, [])
 
   useEffect(() => {
     const debounce = setTimeout(() => fetchBooks(query), 300)
@@ -70,7 +63,7 @@ export default function Books() {
   }, [query])
 
   const deleteBook = async (id: string) => {
-    setBooks((prev) => prev.filter((b) => b.id !== id))
+    setBooks(prev => prev.filter(b => b.id !== id))
     try {
       await fetch(`/api/books/${id}`, { method: "DELETE" })
     } catch (err) {
@@ -79,62 +72,72 @@ export default function Books() {
   }
 
   return (
-    <div className="px-10 space-y-8">
+    <div className="px-6 space-y-6">
+      {/* Search + Add */}
       <div className="flex gap-3">
-        <input
-          placeholder="Search books..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="input input-bordered text-black flex-1"
-        />
+        <div className="relative flex-1">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            placeholder="Search books..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            className="w-full bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/30 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+          />
+        </div>
         <AddBook refreshBooks={() => fetchBooks(query)} />
       </div>
 
-      {loading && <p className="text-white text-center mt-4">Loading...</p>}
-
+      {/* States */}
+      {loading && (
+        <p className="text-sm text-gray-500 dark:text-white/40 text-center py-8">Loading...</p>
+      )}
       {!loading && books.length === 0 && (
-        <p className="text-white text-center mt-4">No books found</p>
+        <p className="text-sm text-gray-500 dark:text-white/40 text-center py-8">No books found</p>
       )}
 
-      <div className="grid md:grid-cols-3 gap-6">
+      {/* Grid */}
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
         <AnimatePresence>
-          {books.map((book) => (
+          {books.map(book => (
             <motion.div
               key={book.id}
               layout
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-              className="relative border rounded-xl overflow-hidden bg-gray-800"
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl overflow-hidden"
             >
-              <div className="relative w-full aspect-[3/4]">
+              {/* Cover */}
+              <div className="relative w-full aspect-[3/4] bg-gray-50 dark:bg-white/5">
                 <Image
                   src={book.img}
                   alt={book.title}
                   fill
                   sizes="(max-width: 768px) 100vw, 33vw"
                   style={{ objectFit: "contain" }}
-                  loading="eager"  // <- this makes it load immediately
-                  unoptimized // avoids Next.js image optimization errors
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/fallback.jpg"
-                  }}
+                  loading="eager"
+                  unoptimized
+                  onError={e => { (e.target as HTMLImageElement).src = "/fallback.jpg" }}
                 />
               </div>
-              <div className="p-3 space-y-2">
-                <h2 className="font-semibold text-white">{book.title}</h2>
+
+              {/* Body */}
+              <div className="p-3 space-y-2.5">
+                <h2 className="text-sm font-medium text-gray-900 dark:text-white truncate">{book.title}</h2>
                 <div className="flex gap-2">
                   <Link
                     href={book.link}
                     target="_blank"
-                    className="btn btn-primary btn-sm flex-1"
+                    className="flex-1 text-center text-xs font-medium bg-amber-500 hover:bg-amber-400 text-amber-950 py-2 rounded-lg transition-colors"
                   >
                     Amazon
                   </Link>
                   <button
                     onClick={() => deleteBook(book.id)}
-                    className="btn btn-error btn-sm flex-1"
+                    className="flex-1 text-xs font-medium bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 py-2 rounded-lg transition-colors"
                   >
                     Delete
                   </button>

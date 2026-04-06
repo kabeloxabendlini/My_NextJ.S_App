@@ -6,34 +6,38 @@ type PageProps = {
 };
 
 export default function UserReposPage({ params }: PageProps) {
-  const { users: username } = use(params); // unwrap Promise
+  const { users: username } = use(params);
 
   return (
-    <div className="p-10 max-w-6xl mx-auto space-y-10">
-      {/* Page heading */}
-      <h1 className="text-4xl font-bold text-center text-black dark:text-white">
-        {username}'s GitHub Repositories
-      </h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 md:p-10">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            {username}'s repositories
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-white/40">
+            Browse all public repositories. Click a repo name to view it on GitHub.
+          </p>
+        </div>
 
-      {/* Description */}
-      <p className="text-center text-lg text-gray-700 dark:text-gray-400">
-        Browse all public repositories for <span className="font-semibold">{username}</span>. 
-        Click on a repo name to view it on GitHub.
-      </p>
+        {/* Repos */}
+        <div className="bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-6">
+          <Repos user={username} cardMode={true} />
+        </div>
 
-      {/* Repos container */}
-      <div className="col-span-full bg-base-100 dark:bg-gray-900 shadow-xl rounded-xl p-6 overflow-x-auto">
-        <Repos user={username} cardMode={true} />
-      </div>
-
-      {/* Navigation back */}
-      <div className="text-center">
-        <a
-          href="/githubusers"
-          className="btn btn-outline btn-primary dark:text-gray-100 dark:border-gray-400 dark:hover:bg-gray-700"
-        >
-          ← Back to GitHub Users
-        </a>
+        {/* Back link */}
+        <div>
+          <a
+            href="/githubusers"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to GitHub Users
+          </a>
+        </div>
       </div>
     </div>
   );

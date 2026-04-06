@@ -3,17 +3,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiLogOut } from 'react-icons/fi';
 
 export default function LogoutPage() {
   const router = useRouter();
-  const [progress, setProgress] = useState(0); // 0 to 100%
-  const [secondsLeft, setSecondsLeft] = useState(10); // numeric countdown
-  const duration = 10000; // 10 seconds
-  const intervalTime = 50; // update every 50ms for smooth animation
+  const [progress, setProgress] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(10);
+
+  const duration = 10000;
+  const intervalTime = 50;
 
   useEffect(() => {
-    // Clear user
     localStorage.removeItem('user');
 
     let elapsed = 0;
@@ -23,9 +22,7 @@ export default function LogoutPage() {
       setSecondsLeft(Math.ceil((duration - elapsed) / 1000));
     }, intervalTime);
 
-    const timeout = setTimeout(() => {
-      router.replace('/');
-    }, duration);
+    const timeout = setTimeout(() => router.replace('/'), duration);
 
     return () => {
       clearInterval(interval);
@@ -33,63 +30,85 @@ export default function LogoutPage() {
     };
   }, [router]);
 
-  // Circle params
-  const radius = 60;
-  const stroke = 6;
+  const radius = 54;
+  const stroke = 5;
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset =
-    circumference - (progress / 100) * circumference;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-  // Color transition: green → yellow → red
   const getColor = (p: number) => {
-    if (p < 50) return '#4ade80'; // green
-    if (p < 80) return '#facc15'; // yellow
-    return '#f87171'; // red
+    if (p < 50) return '#6366f1'; // indigo
+    if (p < 80) return '#f59e0b'; // amber
+    return '#ef4444';             // red
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
-      <svg height={radius * 2} width={radius * 2} className="mb-6 transform -rotate-90">
-        <circle
-          stroke="#374151" // background ring
-          fill="transparent"
-          strokeWidth={stroke}
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-        />
-        <circle
-          stroke={getColor(progress)}
-          fill="transparent"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-          style={{ transition: 'stroke-dashoffset 0.05s linear, stroke 0.2s linear' }}
-        />
-        <foreignObject x={0} y={0} width={radius * 2} height={radius * 2}>
-          <div className="flex flex-col items-center justify-center w-full h-full">
-            <FiLogOut className="text-4xl mb-1" />
-            <span className="text-xl font-bold">{secondsLeft}s</span>
-          </div>
-        </foreignObject>
-      </svg>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 gap-6 px-6">
 
-      <h1 className="text-3xl font-bold mb-2">Logging out...</h1>
-      <p className="text-gray-400">
-        Redirecting to homepage...
-      </p>
-      <p className="text-sm text-gray-500 mt-2">
-        If you are not redirected,{' '}
-        <span className="underline cursor-pointer" onClick={() => router.replace('/')}>
-          click here
-        </span>
-        .
-      </p>
+      {/* Circle timer */}
+      <div className="relative">
+        <svg
+          height={radius * 2}
+          width={radius * 2}
+          className="transform -rotate-90"
+        >
+          {/* Track */}
+          <circle
+            stroke="currentColor"
+            className="text-black/10 dark:text-white/10"
+            fill="transparent"
+            strokeWidth={stroke}
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+          />
+          {/* Progress */}
+          <circle
+            stroke={getColor(progress)}
+            fill="transparent"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+            style={{ transition: 'stroke-dashoffset 0.05s linear, stroke 0.3s ease' }}
+          />
+        </svg>
+
+        {/* Center label — sits on top of SVG */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          {/* Logout icon via SVG — no react-icons dependency */}
+          <svg
+            className="w-5 h-5 text-gray-500 dark:text-white/40 mb-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+          </svg>
+          <span className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+            {secondsLeft}s
+          </span>
+        </div>
+      </div>
+
+      {/* Text */}
+      <div className="text-center space-y-1.5">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Logging out</h1>
+        <p className="text-sm text-gray-500 dark:text-white/40">
+          You'll be redirected to the homepage shortly.
+        </p>
+        <button
+          onClick={() => router.replace('/')}
+          className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-1"
+        >
+          Go now →
+        </button>
+      </div>
+
     </div>
   );
 }

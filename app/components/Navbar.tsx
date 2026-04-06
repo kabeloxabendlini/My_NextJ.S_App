@@ -7,20 +7,30 @@ export default function Navbar() {
   const [logoOpen, setLogoOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light'); // default theme
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const logoRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
-  const handleLogout = () => {
-    localStorage.removeItem('user'); // or token
-    window.location.href = '/login';
-  };
 
-  // Close dropdowns when clicking outside
+  // Load persisted theme on mount
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
+    const stored = (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
+    setTheme(stored);
+    document.documentElement.setAttribute('data-theme', stored);
+  }, []);
+
+  // Persist + apply theme changes
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
       if (logoRef.current && !logoRef.current.contains(target)) setLogoOpen(false);
       if (aboutRef.current && !aboutRef.current.contains(target)) setAboutOpen(false);
       if (moreRef.current && !moreRef.current.contains(target)) setMoreOpen(false);
@@ -29,153 +39,151 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Update html data-theme when theme changes
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+  const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));
 
-  // Toggle between light and dark
-  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+  const DropdownMenu = ({ children }: { children: React.ReactNode }) => (
+    <ul className="absolute left-0 mt-2 w-44 bg-gray-900 border border-white/10 rounded-xl shadow-xl py-1 z-50">
+      {children}
+    </ul>
+  );
 
-  const Dropdown = ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? children : null;
+  const DropdownItem = ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <li>
+      <Link
+        href={href}
+        className="block px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-lg mx-1"
+      >
+        {children}
+      </Link>
+    </li>
+  );
+
+  const ChevronIcon = ({ open }: { open: boolean }) => (
+    <svg
+      className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  );
 
   return (
-    <nav className="navbar bg-gray-900 text-white shadow-sm px-4 py-3 flex justify-between items-center">
-      {/* Logo / Brand Dropdown */}
+    <nav className="bg-[#0f172a] border-b border-white/[0.08] px-4 h-14 flex items-center justify-between relative z-50">
+      {/* Brand */}
       <div className="relative" ref={logoRef}>
         <button
-          onClick={() => setLogoOpen(!logoOpen)}
-          className="btn btn-ghost text-2xl font-bold flex items-center gap-1 text-white"
+          onClick={() => setLogoOpen(o => !o)}
+          className="flex items-center gap-1.5 text-white font-medium text-base hover:text-white/80 transition-colors"
         >
           MySite
-          <svg
-            className={`w-4 h-4 transform transition-transform ${logoOpen ? 'rotate-180' : ''}`}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
+          <ChevronIcon open={logoOpen} />
         </button>
-
-        <Dropdown open={logoOpen}>
-          <ul className="absolute left-0 mt-2 w-44 bg-gray-800 rounded-md shadow-lg py-2 z-50">
+        {logoOpen && (
+          <DropdownMenu>
+            <DropdownItem href="/profile">Profile</DropdownItem>
+            <DropdownItem href="/dashboard">Dashboard</DropdownItem>
             <li>
-              <Link href="/profile" className="block px-4 py-2 hover:bg-primary/20 transition">
-                Profile
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard" className="block px-4 py-2 hover:bg-primary/20 transition">
-                Dashboard
-              </Link>
-            </li>
-            <li>
-              <button onClick={() => (window.location.href = '/logout')}
-              className="block w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400 transition">
-              Logout
+              <button
+                onClick={() => { localStorage.removeItem('user'); window.location.href = '/login'; }}
+                className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors rounded-lg mx-1"
+              >
+                Log out
               </button>
             </li>
-          </ul>
-        </Dropdown>
+          </DropdownMenu>
+        )}
       </div>
 
-      {/* Desktop Menu */}
-      <div className="hidden md:flex items-center space-x-6">
-        <Link href="/" className="hover:text-primary transition">
-          Home
-        </Link>
+      {/* Desktop links */}
+      <div className="hidden md:flex items-center gap-6">
+        <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">Home</Link>
 
-        {/* About Dropdown */}
         <div className="relative" ref={aboutRef}>
           <button
-            onClick={() => setAboutOpen(!aboutOpen)}
-            className="flex items-center gap-1 hover:text-primary transition"
+            onClick={() => setAboutOpen(o => !o)}
+            className="flex items-center gap-1 text-sm text-white/60 hover:text-white transition-colors"
           >
-            About
-            <svg
-              className={`w-4 h-4 transform transition-transform ${aboutOpen ? 'rotate-180' : ''}`}
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
+            About <ChevronIcon open={aboutOpen} />
           </button>
-
-          <Dropdown open={aboutOpen}>
-            <ul className="absolute mt-2 w-44 bg-gray-800 rounded-md shadow-lg py-2 z-50">
-              <li>
-                <Link href="/about" className="block px-4 py-2 hover:bg-primary/20 transition">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/githubusers"
-                  className="block px-4 py-2 hover:bg-primary/20 transition"
-                >
-                  GitHub Users
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about/contact"
-                  className="block px-4 py-2 hover:bg-primary/20 transition"
-                >
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </Dropdown>
+          {aboutOpen && (
+            <DropdownMenu>
+              <DropdownItem href="/about">About</DropdownItem>
+              <DropdownItem href="/githubusers">GitHub Users</DropdownItem>
+              <DropdownItem href="/about/contact">Contact</DropdownItem>
+            </DropdownMenu>
+          )}
         </div>
 
-        {/* More Dropdown */}
         <div className="relative" ref={moreRef}>
           <button
-            onClick={() => setMoreOpen(!moreOpen)}
-            className="flex items-center gap-1 hover:text-primary transition"
+            onClick={() => setMoreOpen(o => !o)}
+            className="flex items-center gap-1 text-sm text-white/60 hover:text-white transition-colors"
           >
-            More
-            <svg
-              className={`w-4 h-4 transform transition-transform ${moreOpen ? 'rotate-180' : ''}`}
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
+            More <ChevronIcon open={moreOpen} />
           </button>
-
-          <Dropdown open={moreOpen}>
-            <ul className="absolute right-0 mt-2 w-44 bg-gray-800 rounded-md shadow-lg py-2 z-50">
-              <li>
-                <Link href="/blog" className="block px-4 py-2 hover:bg-primary/20 transition">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/services" className="block px-4 py-2 hover:bg-primary/20 transition">
-                  Services
-                </Link>
-              </li>
-            </ul>
-          </Dropdown>
+          {moreOpen && (
+            <DropdownMenu>
+              <DropdownItem href="/blog">Blog</DropdownItem>
+              <DropdownItem href="/services">Services</DropdownItem>
+            </DropdownMenu>
+          )}
         </div>
 
-        {/* Theme Toggle */}
+        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          className="ml-4 btn btn-square btn-ghost text-xl hover:bg-gray-700 transition"
-          title="Toggle Theme"
+          className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 transition-all"
         >
-          {theme === 'light' ? '🌞' : '🌙'}
+          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
         </button>
       </div>
+
+      {/* Mobile hamburger */}
+      <button
+        className="md:hidden text-white/70 hover:text-white"
+        onClick={() => setMobileOpen(o => !o)}
+        aria-label="Toggle menu"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {mobileOpen
+            ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
+        </svg>
+      </button>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="absolute top-14 left-0 right-0 bg-[#0f172a] border-b border-white/[0.08] py-3 px-4 flex flex-col gap-1 md:hidden">
+          {[
+            { href: '/', label: 'Home' },
+            { href: '/about', label: 'About' },
+            { href: '/githubusers', label: 'GitHub Users' },
+            { href: '/about/contact', label: 'Contact' },
+            { href: '/blog', label: 'Blog' },
+            { href: '/services', label: 'Services' },
+            { href: '/dashboard', label: 'Dashboard' },
+            { href: '/profile', label: 'Profile' },
+          ].map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setMobileOpen(false)}
+              className="text-sm text-white/70 hover:text-white hover:bg-white/5 px-3 py-2 rounded-lg transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
+          <button
+            onClick={toggleTheme}
+            className="text-left text-sm text-white/60 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-colors mt-1"
+          >
+            {theme === 'light' ? '🌙 Switch to Dark' : '☀️ Switch to Light'}
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

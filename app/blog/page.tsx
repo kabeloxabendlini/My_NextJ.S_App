@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
-import DeleteButton from '../components/DeleteButton'; // ✅ import
+import DeleteButton from '../components/DeleteButton';
 
 interface BlogPost {
   id: string;
@@ -16,37 +16,51 @@ const dummyPosts: BlogPost[] = [
 
 export default async function BlogPage() {
   const dbPosts = await prisma.blogPost.findMany();
-  const posts = [...dummyPosts, ...dbPosts];
+  const posts: BlogPost[] = [...dummyPosts, ...dbPosts];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Blog</h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+      <div className="max-w-3xl mx-auto space-y-6">
 
-      <ul className="space-y-4">
-        {posts.map((post) => (
-          <li key={post.id} className="border rounded-md p-4 hover:shadow-lg transition">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Blog</h1>
+            <p className="text-sm text-gray-500 dark:text-white/40 mt-0.5">{posts.length} posts</p>
+          </div>
+          <Link
+            href="/blog/create"
+            className="text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl transition-colors"
+          >
+            + New post
+          </Link>
+        </div>
 
-            <h2 className="text-xl font-semibold">{post.title}</h2>
-
-            <p className="text-gray-200 mt-2">
-              {post.content.substring(0, 100)}...
-            </p>
-
-            <div className="flex items-center gap-4 mt-2">
-              <Link
-                href={`/blog/${post.id}`}
-                className="text-blue-400 hover:underline"
-              >
-                Read More
-              </Link>
-
-              {/* ✅ Delete Button */}
-              <DeleteButton id={post.id} />
+        {/* Posts */}
+        <div className="space-y-3">
+          {posts.map(post => (
+            <div
+              key={post.id}
+              className="bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 transition-colors"
+            >
+              <h2 className="text-sm font-medium text-gray-900 dark:text-white mb-1">{post.title}</h2>
+              <p className="text-xs text-gray-500 dark:text-white/40 leading-relaxed mb-3">
+                {post.content.substring(0, 120)}…
+              </p>
+              <div className="flex items-center gap-3">
+                <Link
+                  href={`/blog/${post.id}`}
+                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  Read more →
+                </Link>
+                <DeleteButton id={post.id} />
+              </div>
             </div>
+          ))}
+        </div>
 
-          </li>
-        ))}
-      </ul>
+      </div>
     </div>
   );
 }

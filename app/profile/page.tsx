@@ -5,51 +5,32 @@ import { v4 as uuidv4 } from 'uuid';
 
 export default function ProfilePage() {
   const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState({
-    id: '',
-    name: '',
-    email: '',
-    avatar: '',
-  });
+  const [user, setUser] = useState({ id: '', name: '', email: '', avatar: '' });
   const [editing, setEditing] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // ✅ Resize image BEFORE upload (OUTSIDE handler)
   const resizeImage = (file: File): Promise<Blob> => {
     return new Promise((resolve) => {
       const img = document.createElement('img');
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-
       img.onload = () => {
         const MAX_WIDTH = 300;
         const scale = MAX_WIDTH / img.width;
-
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
-
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) resolve(blob);
-          },
-          'image/jpeg',
-          0.7
-        );
+        canvas.toBlob((blob) => { if (blob) resolve(blob); }, 'image/jpeg', 0.7);
       };
-
       img.src = URL.createObjectURL(file);
     });
   };
 
-  // Initialize user
   useEffect(() => {
     setMounted(true);
-    const storedUser = localStorage.getItem('user');
-
-    if (storedUser) setUser(JSON.parse(storedUser));
+    const stored = localStorage.getItem('user');
+    if (stored) setUser(JSON.parse(stored));
     else setUser({ id: uuidv4(), name: '', email: '', avatar: '' });
   }, []);
 
@@ -64,57 +45,54 @@ export default function ProfilePage() {
     window.location.href = '/';
   };
 
-  // ✅ FIXED upload handler
   const handleAvatarUpload = async (file: File) => {
     if (!file) return;
-
     setUploading(true);
-
     try {
       const resized = await resizeImage(file);
-
       const formData = new FormData();
       formData.append('file', resized, file.name);
       formData.append('userId', user.id);
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
-
       if (data.url) {
         const updatedUser = { ...user, avatar: data.url };
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
         setAvatarError(false);
-      } else {
-        console.error('Upload error:', data.error);
       }
     } catch (err) {
       console.error('Upload failed:', err);
     }
-
     setUploading(false);
   };
 
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gray-900">
-        Loading profile...
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <p className="text-sm text-gray-500 dark:text-white/40">Loading profile...</p>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white p-6 flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+  const initials = user.name
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
 
-      <div className="grid gap-6 w-full max-w-3xl md:grid-cols-2">
-        {/* Avatar */}
-        <div className="bg-gray-800 p-4 rounded-xl shadow flex flex-col items-center">
-          <div className="w-32 h-32 rounded-full overflow-hidden mb-4 bg-gray-700 flex items-center justify-center">
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+      <div className="max-w-2xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">My profile</h1>
+          <p className="text-sm text-gray-500 dark:text-white/40 mt-1">Manage your account details</p>
+        </div>
+
+        {/* Avatar card */}
+        <div className="bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-6 flex flex-col items-center gap-4">
+          {/* Avatar circle */}
+          <div className="w-24 h-24 rounded-full overflow-hidden border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
             {user.avatar && !avatarError ? (
               <img
                 src={user.avatar}
@@ -123,103 +101,102 @@ export default function ProfilePage() {
                 onError={() => setAvatarError(true)}
               />
             ) : (
-              <span className="text-gray-400 text-sm text-center px-2">
-                No photo uploaded
-              </span>
+              <span className="text-xl font-medium text-gray-400 dark:text-white/30">{initials}</span>
             )}
           </div>
 
           {editing && (
-            <div className="flex flex-col gap-2 w-full">
+            <div className="w-full space-y-2">
+              <label className="block text-xs text-gray-500 dark:text-white/40 mb-1">Upload photo</label>
               <input
                 type="file"
                 accept="image/*"
-                className="file-input file-input-bordered w-full text-black"
-                onChange={(e) =>
-                  e.target.files && handleAvatarUpload(e.target.files[0])
-                }
+                onChange={e => e.target.files && handleAvatarUpload(e.target.files[0])}
+                className="block w-full text-sm text-gray-500 dark:text-white/40
+                  file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-indigo-600 file:text-white
+                  hover:file:bg-indigo-500 file:cursor-pointer file:transition-colors"
               />
-
               {uploading && (
-                <p className="text-sm text-gray-400 animate-pulse">
-                  Uploading image...
-                </p>
+                <p className="text-xs text-gray-400 dark:text-white/30 animate-pulse">Uploading...</p>
               )}
             </div>
           )}
         </div>
 
-        {/* Info */}
-        <div className="bg-gray-800 p-4 rounded-xl shadow flex flex-col justify-between">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm text-gray-400">Name</label>
-              {editing ? (
-                <input
-                  className="w-full mt-1 p-2 rounded bg-gray-700 text-black"
-                  value={user.name}
-                  onChange={(e) =>
-                    setUser({ ...user, name: e.target.value })
-                  }
-                />
-              ) : (
-                <p className="bg-gray-700 p-2 rounded mt-1">
-                  {user.name || 'No name set'}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-400">Email</label>
-              {editing ? (
-                <input
-                  className="w-full mt-1 p-2 rounded bg-gray-700 text-black"
-                  value={user.email}
-                  onChange={(e) =>
-                    setUser({ ...user, email: e.target.value })
-                  }
-                />
-              ) : (
-                <p className="bg-gray-700 p-2 rounded mt-1">
-                  {user.email || 'No email set'}
-                </p>
-              )}
-            </div>
+        {/* Info card */}
+        <div className="bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-6 space-y-5">
+          {/* Name */}
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-white/40 mb-1.5">Name</label>
+            {editing ? (
+              <input
+                value={user.name}
+                onChange={e => setUser({ ...user, name: e.target.value })}
+                placeholder="Your name"
+                className="w-full bg-gray-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/20 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+              />
+            ) : (
+              <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2.5">
+                {user.name || <span className="text-gray-400 dark:text-white/20">No name set</span>}
+              </p>
+            )}
           </div>
 
-          <div className="flex flex-col gap-2 mt-6">
+          {/* Email */}
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-white/40 mb-1.5">Email</label>
             {editing ? (
-              <>
+              <input
+                value={user.email}
+                onChange={e => setUser({ ...user, email: e.target.value })}
+                placeholder="your@email.com"
+                type="email"
+                className="w-full bg-gray-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/20 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+              />
+            ) : (
+              <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2.5">
+                {user.email || <span className="text-gray-400 dark:text-white/20">No email set</span>}
+              </p>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2 pt-2">
+            {editing ? (
+              <div className="flex gap-2">
                 <button
                   onClick={handleSave}
-                  className="btn btn-primary w-full"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
                 >
-                  Save Changes
+                  Save changes
                 </button>
                 <button
                   onClick={() => setEditing(false)}
-                  className="btn w-full"
+                  className="flex-1 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-white/70 border border-black/10 dark:border-white/10 text-sm font-medium py-2.5 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
-              </>
+              </div>
             ) : (
               <button
                 onClick={() => setEditing(true)}
-                className="btn btn-primary w-full"
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
               >
-                Edit Profile
+                Edit profile
               </button>
             )}
             <button
               onClick={handleLogout}
-              className="btn w-full bg-red-600 hover:bg-red-700 border-none"
+              className="w-full bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 text-sm font-medium py-2.5 rounded-xl transition-colors"
             >
-              Logout
+              Log out
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
-};
+}
