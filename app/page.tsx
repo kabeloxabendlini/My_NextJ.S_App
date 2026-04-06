@@ -30,8 +30,8 @@ const resources = [
   { href: "https://nextjs.org/docs", label: "Next.js docs" },
   { href: "https://nextjs.org/learn", label: "Learn Next.js" },
   { href: "https://vercel.com/new", label: "Deploy on Vercel" },
-  { href: "http://localhost:3000/blog/create", label: "Blog Creation" },
-  { href: "http://localhost:3000/blog/[id]", label: "Blog Post" },
+  { href: "https://my-next-js-app-zeta-three.vercel.app/blog/create", label: "Blog Creation" },
+  { href: "https://my-next-js-app-zeta-three.vercel.app/blog/[id]", label: "Blog Post" },
 ];
 
 export default function Home() {
