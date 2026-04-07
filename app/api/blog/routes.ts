@@ -1,12 +1,29 @@
-import { prisma } from '@/lib/db';
+// app/api/blog/route.ts
 import { NextResponse } from 'next/server';
 
+export async function GET() {
+  // Return all blog posts
+  return NextResponse.json({ posts: [] });
+}
+
 export async function POST(req: Request) {
-  const { title, content } = await req.json();
+  try {
+    const body = await req.json();
+    const { title, content, author } = body;
 
-  const post = await prisma.blogPost.create({
-    data: { title, content },
-  });
+    if (!title || !content) {
+      return NextResponse.json(
+        { error: 'Title and content are required' },
+        { status: 400 }
+      );
+    }
 
-  return NextResponse.json(post);
+    // TODO: save to your database here
+    const newPost = { id: Date.now(), title, content, author };
+
+    return NextResponse.json({ post: newPost }, { status: 201 });
+  } catch (err) {
+    console.error('Blog API error:', err);
+    return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });
+  }
 }
